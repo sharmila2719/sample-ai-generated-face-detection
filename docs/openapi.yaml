@@ -1,0 +1,246 @@
+openapi: "3.0.3"
+info:
+  title: AI Image Detection Pipeline API
+  version: "1.0.0"
+  description: Detect whether an image is AI-generated, real, or a composite.
+
+servers:
+  - url: https://{apiId}.execute-api.us-east-1.amazonaws.com/prod
+    variables:
+      apiId:
+        default: your-api-id
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        "200":
+          description: All dependencies healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: One or more dependencies degraded
+
+  /api/upload-url:
+    post:
+      summary: Get a pre-signed S3 PUT URL for image upload
+      operationId: getUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Pre-signed URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+
+  /api/detect:
+    post:
+      summary: Detect whether a single image is AI-generated
+      operationId: detectImage
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          schema:
+            type: string
+          description: Tenant identifier for multi-tenancy isolation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DetectRequest"
+      responses:
+        "200":
+          description: Detection result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DetectionResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/detect/batch:
+    post:
+      summary: Detect multiple images (up to 100)
+      operationId: detectBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchDetectRequest"
+      responses:
+        "200":
+          description: Batch detection results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchDetectionResult"
+
+  /api/session-check:
+    post:
+      summary: Authenticate for the web UI
+      operationId: sessionCheck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Authenticated — sets session cookie
+        "401":
+          description: Invalid credentials
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded]
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+
+    UploadUrlRequest:
+      type: object
+      properties:
+        content_type:
+          type: string
+          enum: [image/jpeg, image/png, image/webp, image/gif]
+          default: image/jpeg
+        filename:
+          type: string
+      required: [content_type]
+
+    UploadUrlResponse:
+      type: object
+      properties:
+        upload_url:
+          type: string
+        s3_bucket:
+          type: string
+        s3_key:
+          type: string
+        expires_in:
+          type: integer
+
+    DetectRequest:
+      type: object
+      required: [s3_bucket, s3_key]
+      properties:
+        s3_bucket:
+          type: string
+        s3_key:
+          type: string
+        image_id:
+          type: string
+        force_fresh:
+          type: boolean
+          default: false
+        deep_analysis:
+          type: boolean
+          default: false
+        fast_mode:
+          type: boolean
+          default: false
+
+    DetectionResult:
+      type: object
+      properties:
+        image_id:
+          type: string
+        tenant_id:
+          type: string
+        classification:
+          type: string
+          enum: [NATURAL, AI_GENERATED, UNCERTAIN]
+        probability_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        evidence:
+          type: array
+          items:
+            type: string
+        signals_consulted:
+          type: array
+          items:
+            type: string
+        reasoning:
+          type: string
+        model_ids_used:
+          type: array
+          items:
+            type: string
+        composite_analysis:
+          type: object
+        composite_signal:
+          type: object
+        celebrities:
+          type: array
+          items:
+            type: object
+        cache_hit:
+          type: boolean
+
+    BatchDetectRequest:
+      type: object
+      required: [images]
+      properties:
+        batch_mode:
+          type: boolean
+          default: true
+        images:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/DetectRequest"
+
+    BatchDetectionResult:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/DetectionResult"
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error_code:
+                type: string
+              error_message:
+                type: string
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object

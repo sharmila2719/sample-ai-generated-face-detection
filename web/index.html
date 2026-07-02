@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Face Detector</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>🔍 AI Image Detector</h1>
+    <p class="subtitle">Detect AI-generated images and face swaps</p>
+  </header>
+
+  <main>
+    <!-- Login panel -->
+    <section id="login-panel" class="panel">
+      <h2>Sign In</h2>
+      <form id="login-form">
+        <label>Username <input type="text" id="username" autocomplete="username" required /></label>
+        <label>Password <input type="password" id="password" autocomplete="current-password" required /></label>
+        <button type="submit">Sign In</button>
+      </form>
+      <p id="login-error" class="error hidden"></p>
+    </section>
+
+    <!-- Upload + result panel -->
+    <section id="app-panel" class="panel hidden">
+      <div class="upload-area" id="drop-zone">
+        <p>Drag &amp; drop an image here or</p>
+        <label class="file-label">
+          Choose file
+          <input type="file" id="file-input" accept="image/*" hidden />
+        </label>
+      </div>
+
+      <div id="preview-container" class="hidden">
+        <img id="preview-img" alt="Preview" />
+        <canvas id="overlay-canvas"></canvas>
+      </div>
+
+      <div class="controls">
+        <label>
+          <input type="checkbox" id="deep-analysis" checked />
+          Deep analysis (all vision models)
+        </label>
+      </div>
+
+      <button id="analyze-btn" disabled>Analyze Image</button>
+
+      <div id="result-panel" class="hidden">
+        <div id="verdict-banner"></div>
+        <div id="evidence-list"></div>
+        <div id="signals-list"></div>
+      </div>
+
+      <div id="spinner" class="hidden">Analyzing… this may take up to 30 seconds.</div>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — AI Face Detector</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>🔍 AI Image Detector</h1>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Sign In</h2>
+      <form id="login-form">
+        <label>Username <input type="text" id="username" autocomplete="username" required /></label>
+        <label>Password <input type="password" id="password" autocomplete="current-password" required /></label>
+        <button type="submit">Sign In</button>
+      </form>
+      <p id="login-error" class="error hidden"></p>
+    </section>
+  </main>
+  <script src="config.js"></script>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('login-error');
+      errorEl.classList.add('hidden');
+
+      try {
+        const resp = await fetch(
+          (window.APP_CONFIG && window.APP_CONFIG.apiBase || '') + '/api/session-check',
+          {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+          }
+        );
+        if (resp.ok) {
+          window.location.href = '/';
+        } else {
+          errorEl.textContent = 'Invalid username or password.';
+          errorEl.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorEl.textContent = 'Sign-in failed. Please try again.';
+        errorEl.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
