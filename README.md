@@ -10,7 +10,47 @@ A serverless AWS pipeline that determines whether an uploaded image is:
 
 ## Architecture
 
-![Architecture Diagram](docs/diagrams/architecture.png)
+![Architecture Diagram](docs/diagrams/architecture.svg)
+
+> Full diagram with sequence flows → [docs/ARCHITECTURE_DIAGRAM.md](docs/ARCHITECTURE_DIAGRAM.md)  
+> Interactive HTML diagram → [docs/diagrams/architecture.html](docs/diagrams/architecture.html)
+
+```mermaid
+graph LR
+    Browser["🌐 Browser"] --> CF["☁️ CloudFront\n+ Lambda@Edge Auth"]
+    CF --> API["⚡ API Gateway"]
+    CF --> S3Web["🪣 S3 Web"]
+
+    API --> DL["λ Detection"]
+    API --> UL["λ Upload URL"]
+    API --> HL["λ Health"]
+    API --> SL["λ Session Check"]
+
+    S3Intake["🪣 S3 Intake"] --> EL["λ S3 Event"]
+    UL --> S3Intake
+
+    DL --> ORC
+    EL --> ORC
+
+    subgraph ORC["🔍 Inline Orchestrator — 10-step Cascade"]
+        direction TB
+        S1["① Rekognition Celebrities"] --> S2["② EXIF Check"]
+        S2 --> S3["③ SageMaker Pixel CNN"]
+        S3 --> S4["④ Haiku 4.5 + Sonnet 4.6 parallel"]
+        S4 --> S5["⑤ Face Forensics"]
+        S5 --> S6["⑥ Opus 4.7 Tiebreaker"]
+        S6 --> S7["⑦ Phase B Regions"]
+        S7 --> S8["⑧ Phase C Specialist"]
+        S8 --> S9["⑨ Combine Evidence"]
+        S9 --> S10["⑩ Persist to DynamoDB"]
+    end
+
+    ORC --> DDB["🗄 DynamoDB"]
+    ORC --> Bedrock["Amazon Bedrock\nClaude Haiku/Sonnet/Opus"]
+    ORC --> SM["Amazon SageMaker\nPixel + AIGC + Specialist"]
+    ORC --> Rek["Amazon Rekognition"]
+    ORC --> SNS["📣 SNS Alerts"]
+```
 
 ## Detection Cascade
 
